@@ -23,7 +23,7 @@ logger.setLevel(logging.DEBUG)
 
 def check_extensions(fname, extensions):
     for extension in extensions:
-        if fname.endswith('.' + extensions):
+        if fname.endswith('.' + extension):
             return True
 
     return False
@@ -45,7 +45,9 @@ def get_data(data_path, choose_file):
     data_files = get_files_from_dir(data_path)
     if len(data_files) == 0:
         raise Exception('There are no data files in this directory')
-    if len(data_files) > 1:
+    elif len(data_files) == 1:
+        file = data_files[0]
+    else:
         file = choose_file(data_files)
     with open(file, 'r') as f:
         df = pd.read_csv(f)
@@ -71,27 +73,31 @@ def train(args):
 
     '''
 
-    use_cuda = args.num_gpus > 0
-    device = torch.device('cuda' if use_cuda else 'cpu')
-
+#     use_cuda = args.num_gpus > 0
+#     device = torch.device('cuda' if use_cuda else 'cpu')
+    
     channel_names = json.loads(os.environ['SM_CHANNELS'])
     hyperparameters = json.loads(os.environ['SM_HPS'])
-
+    
+    
+    logger.debug("channel names: {}".format(channel_names))
     # Fetch algorithm hyperparameters
     action_dim = int(hyperparameters.get('action_dim', 0))
     context_dim = int(hyperparameters.get('context_dim', 0 ))
     model_type = str(hyperparameters.get("model_type", 'neural'))
-    model_file = str(hyperparameters.get("mode_file", 'model.pickle'))
+    model_file = str(hyperparameters.get("model_file", 'model.pickle'))
+    sample_actions = bool(hyperparameters.get("sample_actions",True))
 
+
+    
     # Load the data to use for training
-    training_data = get_data(channel_names['SM_CHANNEL_TRAINING'], choose_first)
+    training_data = get_data(args.train, choose_first)
 
     # If action_dim or context_dim = 0 then we will get the dims from the dataframe
     if action_dim == 0 or context_dim == 0:
         context_dim, action_dim = get_dim_contexts_actions(training_data)
 
-
-
+        
 
     if MODEL_CHANNEL in channel_names:
 
@@ -107,22 +113,38 @@ def train(args):
                      f"Training will start from scratch.")
         # Create model based on model_type hyperparameter
         if model_type == 'linear':
-            model = LinearBandits(actions_dim,context_dim)
+            model = LinearBandits(action_dim,context_dim)
         elif model_type == 'neural':
-            model = NeuralBandits(actions_dim,context_dim)
+            model = NeuralBandits(action_dim,context_dim)
         else:
             raise Exception('%s is not a supported model type' % model_type)
-
-
-    # Get the contexts, actions, and rewards to fit the model
-    contexts, actions, rewards = split_data(training_data, context_dim, action_dim)
-    model.fit(contexts,actions,rewards)
+    
+    if sample_actions:
+        td = training_data.to_numpy()
+        contexts, rewards = td[:,:context_dim], td[:,context_dim:]
+        num_contexts = len(training_data)
+        for i in range(num_contexts):
+            context = contexts[i]
+            reward = rewards[i]
+            action = model.action(context)
+            reward_taken = reward[action]
+            model.update(context, action, reward_taken)
+    
+    else:
+        # Get the contexts, actions, and rewards to fit the model
+        contexts, actions, rewards = split_data(training_data, context_dim, action_dim)
+        model.fit(contexts,actions,rewards)
 
     # Save model
+    model_dir = Path(args.model_dir)
     model.save(model_dir/model_file)
 
 
 def get_hparams(parser):
+    parser.add_argument('--action_dim', type=int, default=0, metavar='N',
+                        help='number of actions (default: 0)')
+    parser.add_argument('--context_dim', type=int, default=0, metavar='N',
+                        help='number of features (default: 0)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -142,6 +164,15 @@ def get_hparams(parser):
     return parser
 
 
+# loads the model into memory from disk and returns it
+def model_fn(model_dir):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    with open(os.path.join(model_dir, 'model.pickle'), 'rb') as f:
+        model = load_model(f)
+
+    return model.to(device)
+
 
 def save_model(model, model_dir, fname='model.pth'):
     logger.info("Saving the model.")
@@ -158,11 +189,17 @@ if __name__ == '__main__':
     # Data and model checkpoints directories
     parser = get_hparams(parser)
 
+    
+    
+    # Data, model, and output directories
+    parser.add_argument('--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
+    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
+    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    #parser.add_argument('--test', type=str, default=os.environ['SM_CHANNEL_TEST'])
     # Container environment
     # parser.add_argument('--hosts', type=list, default=json.loads(os.environ['SM_HOSTS']))
     # parser.add_argument('--current-host', type=str, default=os.environ['SM_CURRENT_HOST'])
-    # parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
     # parser.add_argument('--data-dir', type=str, default=os.environ['SM_CHANNEL_TRAINING'])
     # parser.add_argument('--num-gpus', type=int, default=os.environ['SM_NUM_GPUS'])
-
-    train(parser.parse_args())
+    args, _ = parser.parse_known_args()
+    train(args)

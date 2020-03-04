@@ -18,17 +18,40 @@ def model_fn(model_dir):
 
     return model.to(device)
 
-# Deserialize the Invoke request body into an object we can perform prediction on
-# from six import BytesIO
+def _npy_loads(data):
+    """
+    Deserializes npy-formatted bytes into a numpy array
+    """
+    stream = BytesIO(data)
+    return np.load(stream)
 
-# def input_fn(request_body, request_content_type):
-#     """An input_fn that loads a pickled tensor"""
-#     if request_content_type == 'application/python-pickle':
-#         return torch.load(BytesIO(request_body))
-#     else:
-#         # Handle other content-types here or raise an Exception
-#         # if the content type is not supported.
-#         pass
+
+def _npy_dumps(data):
+    """
+    Serialized a numpy array into a stream of npy-formatted bytes.
+    """
+    buffer = BytesIO()
+    np.save(buffer, data)
+    return buffer.getvalue()
+
+
+def input_fn(input_bytes, content_type):
+    """This function is called on the byte stream sent by the client, and is used to deserialize the
+    bytes into a Python object suitable for inference by predict_fn -- in this case, a NumPy array.
+    
+    This implementation is effectively identical to the default implementation used in the Chainer
+    container, for NPY formatted data. This function is included in this script to demonstrate
+    how one might implement `input_fn`.
+    Args:
+        input_bytes (numpy array): a numpy array containing the data serialized by the Chainer predictor
+        content_type: the MIME type of the data in input_bytes
+    Returns:
+        a NumPy array represented by input_bytes.
+    """
+    if content_type == 'application/x-npy':
+        return _npy_loads(input_bytes)
+    else:
+        raise ValueError('Content type must be application/x-npy')
 
 
 # Use default input_fn implemented here: https://github.com/aws/sagemaker-inference-toolkit/blob/master/src/sagemaker_inference/default_inference_handler.py

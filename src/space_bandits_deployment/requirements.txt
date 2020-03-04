@@ -1,0 +1,1 @@
+space_bandits >= 0.0.992
