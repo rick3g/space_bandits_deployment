@@ -18,7 +18,7 @@ DATA_OUTPUT_DIR = "/opt/ml/output/data"
 DATA_EXTENSIONS = ['csv']
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def check_extensions(fname, extensions):
