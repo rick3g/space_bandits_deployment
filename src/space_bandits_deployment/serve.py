@@ -3,8 +3,7 @@ import os
 import time
 import torch
 from space_bandits import load_model
-
-
+import six
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -23,16 +22,16 @@ def _npy_loads(data):
     """
     Deserializes npy-formatted bytes into a numpy array
     """
-    stream = BytesIO(data)
-    stream.seek(0) 
-    return np.load(stream)
+    logger.info("Inside _npy_loads fn")
+    stream = six.BytesIO(data)
+    return np.load(stream,allow_pickle=True)
 
 
 def _npy_dumps(data):
     """
     Serialized a numpy array into a stream of npy-formatted bytes.
     """
-    buffer = BytesIO()
+    buffer = six.BytesIO()
     np.save(buffer, data)
     return buffer.getvalue()
 
@@ -77,11 +76,7 @@ def predict_fn(input_data, model):
     print("The return type from predict_fn is: {}".format(actions))
     return actions
 
-#Serialize the prediction result into the desired response content type
-# def output_fn(prediction, accept=JSON_CONTENT_TYPE):
-#     logger.info('Serializing the generated output.')
-#     if accept == JSON_CONTENT_TYPE: return json.dumps(prediction), accept
-#     raise Exception('Requested unsupported ContentType in Accept: {}'.format(accept))
+
 
     
 # def output_fn(prediction_output, accept):
