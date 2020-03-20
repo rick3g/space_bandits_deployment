@@ -1,0 +1,15 @@
+Resources:
+  DataSourceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ${self:custom.tableName}
+      AttributeDefinitions:
+        - AttributeName: DataSourceId
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: DataSourceId
+          KeyType: HASH
+
+      # Set the capacity to auto-scale
+      BillingMode: PAY_PER_REQUEST

@@ -1,0 +1,11 @@
+{
+    "DataSourceId": "123S3",
+    "DataSourceName": "FirstDataSource",
+    "ComputeStatistics": true,
+    "S3DataSpec": {
+        "DataLocationS3": "s3://dev-s3databucket/data/b.csv",
+        "ContextColumns": [1,2,3],
+        "RewardColumns": [4,5]
+    }
+    
+}

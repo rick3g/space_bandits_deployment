@@ -1,0 +1,234 @@
+swagger: '2.0'
+info:
+  description: This is to run a neural bandit model for contextual multi-armed bandit problems
+  version: 1.0.0
+  title: Neural Bandit API
+  # put the contact info for your development or API team
+  contact:
+    email: you@your-company.com
+
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+# tags are used for organizing operations
+tags:
+- name: admins
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+
+paths:
+  /upload_data:
+    post:
+      tags:
+      - developers
+      summary: uploads data
+      operationId: uploadData
+      description: |
+        Uploads a dataset to be used in training the model
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: data
+        description: data to upload
+        required: true
+        schema:
+          type: object
+          required:
+          - data
+          - key
+          properties:
+            data:
+              type: array 
+            key:
+              type: string
+      responses:
+        200:
+          description: uploaded data
+          schema:
+            $ref: "#/definitions/FileResponse"
+ 
+        400:
+          description: bad input parameter
+          
+  # /upload_csv:
+  #   post:
+  #     tags:
+  #     - developers
+  #     summary: uploads csv file
+  #     operationId: uploadCsv
+  #     description: |
+  #       Uploads a csv file to be used in training the model
+  #     consumes:
+  #     - multipart/form-data
+  #     produces:
+  #     - application/json
+  #     parameters:
+  #     - in: formData
+  #       name: file
+  #       description: file to upload
+  #       required: true
+  #       type: file
+ 
+  #     responses:
+  #       200:
+  #         description: Uploaded file
+  #         schema:
+  #           $ref: "#/definitions/FileResponse"
+  #       400:
+  #         description: bad input parameter
+
+  /create_s3_datasource:
+    post:
+      tags:
+        - developers
+      summary: Creates a s3 datasource from file
+      operationId: createS3DataSource
+      description: |
+        Creates an s3 datasource to be used to train a model
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: data
+          description: Data information
+          required: true
+          schema:
+            type: object
+            required:
+              - DataSourceId
+            properties:
+              DataSourceId:
+                type: string
+              DataSourceName:
+                type: string
+              ComputeStatistics:
+                type: boolean
+              $ref: "#/definitions/S3DataSpec"
+      responses:
+        200:
+          description: Created a s3 datasource
+          schema:
+            type: object
+            properties:
+              DataSourceId: string
+        400:
+          description: bad input parameter
+
+#   /train:
+#     post:
+#       tags:
+#       - developers
+#       summary: trains model
+#       operationId: trainModel
+#       description: |
+#         Train a bandits model on a dataset
+#       consumes:
+#       - application/json
+#       produces:
+#       - application/json
+#       parameters:
+#       - in: body
+#         name: model
+#         description: Model information
+#         required: true
+#         schema:
+#           type: object
+#           required:
+#           - dataFile
+#           properties:
+#             dataFile:
+#               type: string 
+#             modelFile:
+#               type: string
+            
+#       responses:
+#         200:
+#           description: Trained Model
+#           schema:
+#             type: object
+#             required:
+#             - path
+#             properties:
+#               path:
+#                 type: string
+ 
+#         400:
+#           description: bad input parameter
+
+#   /predict:
+#     post:
+#       tags:
+#       - developers
+#       summary: predicts action
+#       operationId: predict
+#       description: |
+#         Predicts the best action given the context
+#       consumes:
+#       - application/json
+#       produces:
+#       - application/json
+#       parameters:
+#       - in: body
+#         name: contexts
+#         description: The contexts to predict the best action for
+#         required: true
+#         schema:
+#           type: object
+#           required:
+#           - contexts
+#           properties:
+#             contexts:
+#               type: string 
+
+#       responses:
+#         200:
+#           description: Predicted action
+#           schema:
+#             type: object
+#             required:
+#             - actions
+#             properties:
+#               actions:
+#                 type: string
+ 
+#         400:
+#           description: bad input parameter    
+
+definitions:
+  FileResponse:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      type:
+        type: "string"
+      message:
+        type: "string"
+      path:
+        type: "string"
+  S3DataSpec:
+    type: "object"
+    required: 
+      - DataLocationS3
+    properties:
+      DataLocationS3:
+        type: string
+      ContextColumns:
+        type: array
+      RewardColumns:
+        type: array
+
+
+# Added by API Auto Mocking Plugin
+host: virtserver.swaggerhub.com
+basePath: /Space-Bandits/spacebandit/1.0.0
+schemes:
+ - https
