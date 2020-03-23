@@ -1,0 +1,13 @@
+
+# coding: utf-8
+
+# In[ ]:
+
+
+# Request
+
+{
+  "EvaluationDataSourceId": "spacebdata",
+  "MLModelID": "sb123"
+}
+
