@@ -9,6 +9,7 @@ import boto3
 import csv
 import io
 import os
+import pandas as pd
 from space_bandits import load_model
 # space_bandits is in s3 env.
 
