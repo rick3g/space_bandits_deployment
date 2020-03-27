@@ -9,6 +9,8 @@ import boto3
 import csv
 import io
 import os
+import pickle
+import uuid
 
 s3_client = boto3.client('s3')
 
