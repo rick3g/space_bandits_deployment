@@ -9,8 +9,8 @@ import boto3
 import csv
 import io
 import os
-import pickle
-import uuid
+from space_bandits import load_model
+# space_bandits is in s3 env.
 
 s3_client = boto3.client('s3')
 
@@ -24,16 +24,15 @@ def lambda_handler(event, context):
     
         # load model 
         bucket = os.environ['S3_BUCKET']
-        key = 'model.pckl'
-        download_path = '/tmp/{}{}'.format(uuid.uuid4(), key)
-        s3_client.download_file(bucket, key, download_path)
-        
-        f = open(download_path, 'rb')
-        model = pickle.load(f)
-        f.close()
-        
+        model = load_model(bucket + '\' + MLModelID)
+        # assuming data is in format contexts, actions, rewards
+        data = pd.read_csv(bucket + '\' + EvaluationDataSourceId).to_numpy()
+        contexts = data[:,:-2]
+        actions = data[:,-2]
+        rewards = data[:,-1]                           
+                
         # get model score 
-        result = model.get_sscore() 
+        result = model.get_sscore(contexts, actions, rewards) 
          
         return {
             'statusCode': 200,
