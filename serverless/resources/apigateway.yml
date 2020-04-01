@@ -3,6 +3,6 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Body: ${file(resources/Space-Bandits-spacebandit-1.0.0-swagger.yaml)}
-      Name : myApi
+      Name : "Neural Bandit API"
       Parameters:
         endpointConfigurationTypes: REGIONAL

@@ -1,7 +1,8 @@
-import boto3
-import os
-import pandas as pd
 import logging
+import os
+
+import boto3
+import pandas as pd
 from six import StringIO
 
 s3 = boto3.client('s3')
@@ -36,11 +37,10 @@ def handler(event, context):
     )
 
     logger.info("RESPONSE FROM S3: {}".format(response))
-    
+
     status = response['ResponseMetadata']['HTTPStatusCode']
-    
+
     logger.info("STATUS: {}".format(status))
-    
+
     return {'statusCode': status,
             'path': file_path}
-    

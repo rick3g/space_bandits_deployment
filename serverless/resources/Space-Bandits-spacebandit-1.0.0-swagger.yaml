@@ -43,7 +43,7 @@ paths:
           - key
           properties:
             data:
-              type: array 
+              type: array
             key:
               type: string
       responses:
@@ -51,10 +51,10 @@ paths:
           description: uploaded data
           schema:
             $ref: "#/definitions/FileResponse"
- 
+
         400:
           description: bad input parameter
-          
+
   # /upload_csv:
   #   post:
   #     tags:
@@ -73,7 +73,7 @@ paths:
   #       description: file to upload
   #       required: true
   #       type: file
- 
+
   #     responses:
   #       200:
   #         description: Uploaded file
@@ -121,85 +121,86 @@ paths:
         400:
           description: bad input parameter
 
-#   /train:
-#     post:
-#       tags:
-#       - developers
-#       summary: trains model
-#       operationId: trainModel
-#       description: |
-#         Train a bandits model on a dataset
-#       consumes:
-#       - application/json
-#       produces:
-#       - application/json
-#       parameters:
-#       - in: body
-#         name: model
-#         description: Model information
-#         required: true
-#         schema:
-#           type: object
-#           required:
-#           - dataFile
-#           properties:
-#             dataFile:
-#               type: string 
-#             modelFile:
-#               type: string
-            
-#       responses:
-#         200:
-#           description: Trained Model
-#           schema:
-#             type: object
-#             required:
-#             - path
-#             properties:
-#               path:
-#                 type: string
- 
-#         400:
-#           description: bad input parameter
+  /predict:
+    post:
+      tags:
+      - developers
+      summary: predicts action
+      operationId: predict
+      description: |
+        Predicts the best action given the context
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: contexts
+        description: The contexts to predict the best action for
+        required: true
+        schema:
+          type: object
+          required:
+          - MLModelId
+          - PredictEndpoint
+          - Record
+          properties:
+            MLModelId:
+              type: string
+            PredictEndpoint:
+              type: string
+            Record:
+              type: object
 
-#   /predict:
-#     post:
-#       tags:
-#       - developers
-#       summary: predicts action
-#       operationId: predict
-#       description: |
-#         Predicts the best action given the context
-#       consumes:
-#       - application/json
-#       produces:
-#       - application/json
-#       parameters:
-#       - in: body
-#         name: contexts
-#         description: The contexts to predict the best action for
-#         required: true
-#         schema:
-#           type: object
-#           required:
-#           - contexts
-#           properties:
-#             contexts:
-#               type: string 
+      responses:
+        200:
+          description: Predicted action
+          schema:
+            $ref: "#/definitions/Prediction"
 
-#       responses:
-#         200:
-#           description: Predicted action
-#           schema:
-#             type: object
-#             required:
-#             - actions
-#             properties:
-#               actions:
-#                 type: string
- 
-#         400:
-#           description: bad input parameter    
+        400:
+          description: bad input parameter
+
+  /create_model:
+    post:
+      tags:
+      - developers
+      summary: creates a bandit model
+      operationId: createModel
+      description: |
+        Creates a neural bandits model and trains it on a dataset
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: model
+        description: Model and data
+        required: true
+        schema:
+          type: object
+          required:
+          - MLModelId
+          - TrainingDataSourceId
+          properties:
+            ModelId:
+              type: string
+            ModelName:
+              type: string
+            Parameters:
+              type: object
+            TrainingDataSourceId:
+              type: string
+      responses:
+        200:
+          description: trained model
+          schema:
+            $ref: "#/definitions/Model" 
+        400:
+          description: Bad input parameter
+
+
 
 definitions:
   FileResponse:
@@ -216,15 +217,43 @@ definitions:
         type: "string"
   S3DataSpec:
     type: "object"
-    required: 
+    required:
       - DataLocationS3
     properties:
       DataLocationS3:
         type: string
-      ContextColumns:
-        type: array
-      RewardColumns:
-        type: array
+      ContextDim:
+        type: integer
+      ActionDim:
+        type: integer
+  Prediction:
+    type: object
+    requires:
+      - PredictedAction
+    properties:
+      PredictedAction:
+        type: string
+      PredictedReward:
+        type: string
+  Model:
+    type: object
+    requires:
+      - ModelId
+      - ModelWeightsPath
+    properties:
+      ModelId:
+        type: string
+      ModelName:
+        type: string
+      DataSourceId:
+        type: string
+      Status:
+        type: string
+      ModelWeightsPath:
+        type: string
+      TrainingJobArn:
+        type: string
+
 
 
 # Added by API Auto Mocking Plugin

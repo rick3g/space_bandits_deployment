@@ -1,0 +1,9 @@
+{
+    "MLModelId": "23456id",
+    "MLModelName": "test-model",
+    "Parameters": {
+        "Epochs": 20,
+        "Layers": ["5","50","10"]
+    },
+    "TrainingDataSourceId": "123S3"
+}

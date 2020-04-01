@@ -27,9 +27,10 @@ custom:
   pythonRequirements:
     dockerizePip: non-linux
     layer: true  #Put dependencies into a Lambda Layer.
-  tableName: 'datasource-table-${self:provider.stage}'
+  dataSourceTableName: 'datasource-table-${self:provider.stage}'
+  modelTableName: 'model-table-${self:provider.stage}'
   s3bucketName: '${self:provider.stage}-s3databucket'
-  
+
 package:
   exclude:
     - bin/**
@@ -57,39 +58,76 @@ provider:
       - "logs:CreateLogStream"
       - "logs:PutLogEvents"
      Resource: "*"
-   - Effect: Allow
+   - Effect: "Allow"
      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-     Resource: 
+        - "dynamodb:DescribeTable"
+        - "dynamodb:Query"
+        - "dynamodb:Scan"
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+     Resource:
         - { "Fn::GetAtt": ["DataSourceTable", "Arn" ] }
+        - {"Fn::GetAtt": ["ModelTable", "Arn"]}
+   - Effect: "Allow"
+     Action:
+        - "sagemaker:*"
+     Resource: "*"
+            
+   - Effect: "Allow"
+     Action:
+      - "iam:PassRole"
+     Resource: "arn:aws:iam::*:role/*"
+     Condition: 
+      StringEquals: 
+        iam:PassedToService: 
+         - "sagemaker.amazonaws.com"
+         - "glue.amazonaws.com"
+         - "robomaker.amazonaws.com"
+         - "states.amazonaws.com"
+
+
+        
+              
+            
+
 
 
 # you can define service wide environment variables here
   environment:
-    DATASOURCE_TABLE: ${self:custom.tableName}
+    DATASOURCE_TABLE: ${self:custom.dataSourceTableName}
+    MODEL_TABLE: ${self:custom.modelTableName}
     S3_BUCKET: ${self:custom.s3bucketName}
-
+    CONTAINER_URI: "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:1.3.1-cpu-py3"
+    
 
 
 functions:
   update_data:
-    handler: updateData.handler
+    handler: lambda_functions/updateData.handler
     layers:
       - {Ref: PythonRequirementsLambdaLayer}
   create_s3_datasource:
-    handler: createDataSource.handler
+    handler: lambda_functions/createDataSource.handler
     layers:
       - {Ref: PythonRequirementsLambdaLayer}
+  predict:
+    handler: lambda_functions/predict.handler
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+  create_model:
+    handler: lambda_functions/createModel.handler
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    environment:
+      LAMBDA_ROLE: "arn:aws:iam::351033349862:role/service-role/AmazonSageMaker-ExecutionRole-20200227T101932"
+
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
- 
+
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)
@@ -120,8 +158,8 @@ functions:
 #            path: /hello
 
 #    Define function environment variables here
-    environment:
-      variable2: value2
+    # environment:
+    #   MODEL_ENDPOINT: value2
 
 # you can add CloudFormation resource templates here
 resources:
@@ -129,9 +167,5 @@ resources:
   - ${file(resources/dynamodb-table.yml)}
  # S3 bucket
   - ${file(resources/s3-bucket.yml)}
- # Api Gateway 
-  - ${file(resources/apigateway.yml)}
- 
-
-
-
+ # Api Gateway
+  #- ${file(resources/apigateway.yml)}

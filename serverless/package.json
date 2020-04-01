@@ -2,7 +2,9 @@
   "name": "data-pipline",
   "description": "",
   "version": "0.1.0",
-  "dependencies": {},
+  "dependencies": {
+    "minimist": "^=1.2.2"
+  },
   "devDependencies": {
     "serverless-python-requirements": "^5.1.0"
   }

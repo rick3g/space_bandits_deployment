@@ -4,8 +4,8 @@
     "ComputeStatistics": true,
     "S3DataSpec": {
         "DataLocationS3": "s3://dev-s3databucket/data/b.csv",
-        "ContextColumns": [1,2,3],
-        "RewardColumns": [4,5]
+        "ContextDim": 21,
+        "ActionDim": 8
     }
-    
+
 }
